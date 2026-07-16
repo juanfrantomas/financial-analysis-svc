@@ -4,7 +4,7 @@ Servicio de análisis de series temporales financieras con un módulo RAG para c
 
 ## Sobre este proyecto
 
-Trabajo de la asignatura **Análisis de Series Temporales** del **Máster en Big Data e Inteligencia Artificial** de la **Universitat Politècnica de València (UPV)**, realizado por **Adrián Sánchez** y **Juanfran Tomás**.
+Trabajo de la asignatura **Análisis de Series Temporales** del **Máster en Big Data e Inteligencia Artificial** de la **Universitat Politècnica de València (UPV)**, realizado por **Adrián Sánchez** (adsanol@alumno.upv.es) y **Juanfran Tomás** (juatopla@inf.upv.es).
 
 El repositorio combina dos piezas:
 
