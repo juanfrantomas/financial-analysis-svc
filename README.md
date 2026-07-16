@@ -1,8 +1,57 @@
 # Financial Analysis Service
 
-API que iremos construyendo a lo largo de las sesiones de la asignatura. Al final de las tres clases tendrá análisis de series temporales, modelos de machine learning y un RAG sobre documentación financiera.
+Servicio de análisis de series temporales financieras con un módulo RAG para consultar documentación en lenguaje natural.
 
-Leyendo está guía deberíamos ser capaces de tener la versión 0.1.0 de la API, de manera que podamos ir añadiendo features sesión a sesión.
+## Sobre este proyecto
+
+Trabajo de la asignatura **Análisis de Series Temporales** del **Máster en Big Data e Inteligencia Artificial** de la **Universitat Politècnica de València (UPV)**, realizado por **Adrián Sánchez** y **Juanfran Tomás**.
+
+El repositorio combina dos piezas:
+
+- Una API REST (`app/main.py`) que expone endpoints de análisis técnico y un sistema RAG sobre PDFs de documentación financiera.
+- Una colección de notebooks (`notebooks/`) que recorren, de forma práctica, los conceptos de la asignatura: carga y manipulación de series temporales, gráficos, rentabilidades, volatilidad, medias móviles, Value at Risk y forecasting con SARIMAX.
+
+## ¿Qué hace `app/main.py`?
+
+`app/main.py` es el punto de entrada del servicio. Al arrancar:
+
+1. Carga las variables de entorno desde `app/.env` (`load_dotenv`).
+2. Inicializa una instancia **en memoria** de Qdrant (`QdrantClient(location=":memory:")`) con una colección `fin-docs` de dimensión 1536 (compatible con `text-embedding-3-small`).
+3. Configura el *retriever* con `QdrantVectorStore` + `OpenAIEmbeddings` y un LLM `gpt-4o-mini` de OpenAI.
+4. Define un prompt que obliga al modelo a responder en español, conciso y usando solo el contexto recuperado (con cláusula "si no sabes, di que no sabes").
+
+### Endpoints expuestos
+
+| Método | Ruta                  | Descripción |
+|--------|-----------------------|-------------|
+| `GET`  | `/health`             | Healthcheck simple. Devuelve `{"status": "ok"}`. |
+| `POST` | `/technical-analysis` | Recibe `symbol` (ej. `aapl`, `msft`, `tsla`, `goog`). Calcula el **MACD** (EMA12 − EMA26) y la línea de señal (EMA9), genera un gráfico PNG con `matplotlib` y lo devuelve como `image/png`. El fichero se persiste en `./outputs/<symbol>macd<timestamp>.png`. |
+| `POST` | `/index_data`         | Recorre los PDFs de `app/data/`, los trocea con `RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)` y los indexa en la colección Qdrant. Devuelve páginas cargadas, chunks indexados y los IDs de muestra. |
+| `POST` | `/query`              | Recupera los **top-5** documentos más similares a la pregunta (`similarity_search_with_score`), construye el prompt con ese contexto, lo envía a `gpt-4o-mini` y devuelve la respuesta junto con las fuentes y sus scores. |
+
+### Flujo RAG
+
+```
+PDFs en app/data/  ──►  PyPDFLoader  ──►  RecursiveCharacterTextSplitter
+                                                       │
+                                                       ▼
+                                          OpenAIEmbeddings (1536-d)
+                                                       │
+                                                       ▼
+                                         Qdrant (in-memory collection "fin-docs")
+                                                       │
+            pregunta del usuario ──► similarity_search (k=5)
+                                                       │
+                                                       ▼
+                              ChatPromptTemplate  ──►  ChatOpenAI (gpt-4o-mini)
+                                                       │
+                                                       ▼
+                                                respuesta + fuentes
+```
+
+## Cómo usar este repositorio
+
+Leyendo esta guía deberíamos ser capaces de tener la versión 0.1.0 de la API lista para correr, con sus notebooks y dependencias instaladas.
 
 ---
 
